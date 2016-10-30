@@ -1,0 +1,12 @@
+---
+
+iptnetflow_pkg:
+  - kernel-devel
+  - iptables-devel
+  - net-snmp
+  - net-snmp-devel
+  - kernel-headers
+  - gcc
+  - gcc-c++
+  - make
+

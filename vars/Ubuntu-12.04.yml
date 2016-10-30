@@ -1,0 +1,22 @@
+---
+
+iptnetflow_pkg:
+  - module-assistant
+#  - linux-source
+  - "linux-image-{{ ansible_kernel }}"
+  - "linux-headers-{{ ansible_kernel }}"
+  - iptables-dev
+  - pkg-config
+  - snmpd
+  - libsnmp-dev
+  - build-essential
+  - dpkg-dev
+  - fakeroot
+  - g++
+  - g++-4.6
+  - libalgorithm-diff-perl
+  - libalgorithm-diff-xs-perl
+  - libalgorithm-merge-perl
+  - libdpkg-perl
+  - libstdc++6-4.6-dev
+
