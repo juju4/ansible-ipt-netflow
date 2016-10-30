@@ -6,6 +6,7 @@ before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq python-apt python-pycurl
  - ln -s ansible-ipt-netflow ../juju4.ipt-netflow
+ - ./get-dependencies.sh
 ## for local travis execution as we use same default.yml than kitchen
  - mkdir /tmp/kitchen
  - ln -s /home/travis/build/juju4/ansible-ipt-netflow/test/integration/default/tmp /tmp/kitchen/tmp
@@ -32,5 +33,5 @@ script:
 
 # Serverspec
 #  - "test/integration/default/serverspec/run-local-tests.sh"
-  - "cd test/integration/default/serverspec/ && bundle exec rake spec"
+#  - "cd test/integration/default/serverspec/ && bundle exec rake spec"
 

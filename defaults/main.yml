@@ -6,3 +6,6 @@ iptnetflow_version: HEAD
 iptnetflow_flow_collector: '127.0.0.1:9995'
 iptnetflow_configure_args: '--enable-vlan --enable-promisc --promisc-mpls'
 
+## Travis note: not possible. https://github.com/travis-ci/travis-ci/issues/2291
+iptnetflow_load_module: true
+

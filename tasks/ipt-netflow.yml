@@ -53,13 +53,14 @@
   changed_when: false
   register: lsmod
 - block:
+    - debug: var=lsmod
 ## depmod only rewrite those files like '/lib/modules/{{ ansible_kernel }}/modules.dep', not creating them
     - name: run depmod
       command: "depmod chdir={{ toolsetdir }}/ipt-netflow"
     - name: load ipt_NETFLOW.ko
 #      command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
       command: "insmod /lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
-  when: lsmod is defined and lsmod.stdout is defined and lsmod.stdout.find("ipt_NETFLOW.ko") == -1
+  when: lsmod is defined and lsmod.stdout is defined and lsmod.stdout.find("ipt_NETFLOW.ko") == -1 and iptnetflow_load_module is defined and iptnetflow_load_module and not (ansible_env['TRAVIS'] is defined and ansible_env['TRAVIS'] == 'true')
 ## FIXME! ubuntu 12.04
 #$ sudo insmod /lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko 
 #insmod: error inserting '/lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko': -1 Unknown symbol in module
