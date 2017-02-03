@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/juju4/ansible-ipt-netflow.svg?branch=master)](https://travis-ci.org/juju4/ansible-ipt-netflow)
+[![Build Status - Master](https://travis-ci.org/juju4/ansible-ipt-netflow.svg?branch=master)](https://travis-ci.org/juju4/ansible-ipt-netflow)
+[![Build Status - Devel](https://travis-ci.org/juju4/ansible-ipt-netflow.svg?branch=devel)](https://travis-ci.org/juju4/ansible-ipt-netflow/branches)
 # IPT Netflow kernel module ansible role
 
 Ansible role to setup IPT Netflow
@@ -14,6 +15,7 @@ High performance NetFlow v5, v9, IPFIX flow data export module for Linux
 It was tested on the following versions:
  * 1.9
  * 2.0
+ * 2.2
 
 ### Operating systems
 
