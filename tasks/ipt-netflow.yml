@@ -46,8 +46,13 @@
     - { s: 'make all install', c: '/lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko' }
 
 - name: configure ipt-netflow
-  lineinfile: dest=/etc/modprobe.d/ipt_netflow.conf regexp='options ipt_NETFLOW .*' line="options ipt_NETFLOW {{ iptnetflow_flow_collector }}" backup=yes create=yes
-#  lineinfile: dest=/etc/modprobe.d/ipt_netflow.conf regexp='options ipt_NETFLOW .*' line="options ipt_NETFLOW {{ iptnetflow_flow_collector }} protocol=9 natevents=1" backup=yes create=yes
+  lineinfile:
+    dest: /etc/modprobe.d/ipt_netflow.conf
+    regexp: 'options ipt_NETFLOW .*'
+    line: "options ipt_NETFLOW {{ iptnetflow_flow_collector }}"
+    #line: "options ipt_NETFLOW {{ iptnetflow_flow_collector }} protocol=9 natevents=1"
+    backup: yes
+    create: yes
 
 - name: check if modules loaded
   command: lsmod
@@ -61,13 +66,19 @@
     - name: load ipt_NETFLOW.ko
 #      command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
       command: "insmod /lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
-  when: lsmod is defined and lsmod.stdout is defined and lsmod.stdout.find("ipt_NETFLOW.ko") == -1 and iptnetflow_load_module is defined and iptnetflow_load_module and not (ansible_env['TRAVIS'] is defined and ansible_env['TRAVIS'] == 'true')
+  when: >
+    lsmod is defined and lsmod.stdout is defined and lsmod.stdout.find("ipt_NETFLOW.ko") == -1 and
+    iptnetflow_load_module is defined and iptnetflow_load_module and
+    not (ansible_env['TRAVIS'] is defined and ansible_env['TRAVIS'] == 'true')
 ## FIXME! ubuntu 12.04
 #$ sudo insmod /lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko
 #insmod: error inserting '/lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko': -1 Unknown symbol in module
 
 - name: load ipt-netflow at boot
-  lineinfile: "dest=/etc/sysconfig/iptables-config line='IPTABLES_MODULES=\"ipt_NETFLOW\"' backup=yes"
+  lineinfile:
+    dest: /etc/sysconfig/iptables-config
+    line: 'IPTABLES_MODULES=\"ipt_NETFLOW\"'
+    backup: yes
   when: ansible_os_family == 'RedHat'
   notify:
     - restart iptables
