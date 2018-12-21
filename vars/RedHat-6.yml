@@ -9,4 +9,3 @@ iptnetflow_pkg:
   - gcc
   - gcc-c++
   - make
-

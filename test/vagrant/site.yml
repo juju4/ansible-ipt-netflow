@@ -2,5 +2,4 @@
 
 - hosts: all
   roles:
-    - juju4.ipt-netflow
-
+    - juju4.iptnetflow

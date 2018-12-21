@@ -7,8 +7,9 @@
     version={{ iptnetflow_version }}
 
 - name: ipt-netflow dependencies
-  package: name={{item}} state=present
-  with_items: "{{ iptnetflow_pkg }}"
+  package: name={{ iptnetflow_pkg }} state=present
+  register: pkg_result
+  until: pkg_result is success
 
 #- name: set linux src vars
 #  set_fact:
@@ -73,4 +74,3 @@
 
 ## selinux?
 #restorecon -v /lib/xtables/libipt_NETFLOW.so
-

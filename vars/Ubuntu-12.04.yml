@@ -19,4 +19,3 @@ iptnetflow_pkg:
   - libalgorithm-merge-perl
   - libdpkg-perl
   - libstdc++6-4.6-dev
-
