@@ -1,0 +1,12 @@
+---
+
+iptnetflow_pkg:
+  - module-assistant
+#  - linux-source
+  - "linux-image-{{ ansible_kernel }}"
+  - "linux-headers-{{ ansible_kernel }}"
+  - iptables-dev
+  - pkg-config
+  - snmpd
+  - libsnmp-dev
+  - dkms
