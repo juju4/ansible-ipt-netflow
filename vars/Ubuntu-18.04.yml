@@ -9,3 +9,4 @@ iptnetflow_pkg:
   - pkg-config
   - snmpd
   - libsnmp-dev
+  - dkms
