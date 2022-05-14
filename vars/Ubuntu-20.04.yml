@@ -5,7 +5,6 @@ iptnetflow_pkg:
   # - linux-source
   - "linux-image-{{ ansible_kernel }}"
   - "linux-headers-{{ ansible_kernel }}"
-  - iptables-dev
   - pkg-config
   - snmpd
   - libsnmp-dev
