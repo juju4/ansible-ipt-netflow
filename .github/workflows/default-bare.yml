@@ -10,10 +10,12 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 4
+      matrix:
+        os: [ubuntu-18.04, ubuntu-20.04]
+    runs-on: ${{ matrix.os }}
     env:
       ANSIBLE_CALLBACKS_ENABLED: profile_tasks
       ANSIBLE_EXTRA_VARS: ""
