@@ -32,4 +32,3 @@ end
 describe file('/etc/modprobe.d/ipt_netflow.conf') do
   it { should be_readable }
 end
-

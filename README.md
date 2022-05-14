@@ -63,4 +63,3 @@ Use kitchen/vagrant
 ## License
 
 BSD 2-clause
-
