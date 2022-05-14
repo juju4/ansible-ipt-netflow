@@ -11,33 +11,33 @@ env:
     suite: default
 
 before_install:
- - sudo apt-get update -qq
- - sudo apt-get install -qq python-apt python-pycurl
- - "[ -f get-dependencies.sh ] && sh -x get-dependencies.sh"
-## for local travis execution as we use same default.yml than kitchen
- - mkdir /tmp/kitchen
- - ln -s /home/travis/build/juju4/ansible-ipt-netflow/test/integration/${suite}/tmp /tmp/kitchen/tmp
-## serverspec test
- - sudo apt-get install -qq ruby rake
-## FIXME! /usr/lib/ruby/2.0.0/rubygems/config_file.rb:319:in `load_file': uninitialized constant Gem::SafeYAML (NameError)
-# - sudo gem install serverspec
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq python-apt python-pycurl
+  - "[ -f get-dependencies.sh ] && sh -x get-dependencies.sh"
+  ## for local travis execution as we use same default.yml than kitchen
+  - mkdir /tmp/kitchen
+  - ln -s /home/travis/build/juju4/ansible-ipt-netflow/test/integration/${suite}/tmp /tmp/kitchen/tmp
+  ## serverspec test
+  - sudo apt-get install -qq ruby rake
+  ## FIXME! /usr/lib/ruby/2.0.0/rubygems/config_file.rb:319:in `load_file': uninitialized constant Gem::SafeYAML (NameError)
+  # - sudo gem install serverspec
 install:
   - pip install ansible
   - ansible --version
   - "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
-#  - gem --version
+  # - gem --version
 script:
   - "echo \"localhost\" > inventory"
 
-# Check the role/playbook's syntax.
+  # Check the role/playbook's syntax.
   - "ansible-playbook -i inventory --syntax-check test/integration/${suite}/default.yml"
 
-# Run the role/playbook with ansible-playbook.
+  # Run the role/playbook with ansible-playbook.
   - "ansible-playbook -i inventory --connection=local --become -vvvv test/integration/${suite}/default.yml"
 
-# Run the role/playbook again, checking to make sure it's idempotent.
+  # Run the role/playbook again, checking to make sure it's idempotent.
   - "ansible-playbook -i inventory test/integration/${suite}/default.yml --connection=local --become | tee /tmp/idempotency.log | grep -q 'changed=0.*failed=0'  && (echo 'Idempotence test: pass' && exit 0)  || (echo 'Idempotence test: fail' && cat /tmp/idempotency.log && exit 1)"
 
-# Serverspec
-#  - "test/integration/default/serverspec/run-local-tests.sh"
-#  - "cd test/integration/default/serverspec/ && bundle exec rake spec"
+  # Serverspec
+  # - "test/integration/default/serverspec/run-local-tests.sh"
+  # - "cd test/integration/default/serverspec/ && bundle exec rake spec"
