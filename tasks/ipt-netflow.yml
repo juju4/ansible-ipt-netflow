@@ -16,7 +16,8 @@
 #     srcdir: "linux-source-{{ ansible_kernel | regex_replace('-[0-9]*-generic$', '') }}"
 #     workdir: "/root/"
 
-- block:
+- name: Debian
+  block:
     ## no module-assistant: fails...
     # - name: uncompress kernel
     #   unarchive: "src=/usr/src/{{ srcdir }}.tar.bz2 dest={{ workdir }} creates={{ workdir }}/{{ srcdir }}/Makefile"
