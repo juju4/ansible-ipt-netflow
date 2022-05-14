@@ -6,8 +6,16 @@
     dest={{ toolsetdir }}/ipt-netflow
     version={{ iptnetflow_version }}
 
+- name: Debian | update cache
+  ansible.builtin.apt:
+    update_cache: yes
+    cache_valid_time: "{{ iptnetflow_apt_cache_valid_time | default(3600) }}"
+  when: ansible_os_family == 'Debian'
+
 - name: ipt-netflow dependencies
-  ansible.builtin.package: name={{ iptnetflow_pkg }} state=present
+  ansible.builtin.package:
+    name: "{{ iptnetflow_pkg }}"
+    state: present
   register: pkg_result
   until: pkg_result is success
 
