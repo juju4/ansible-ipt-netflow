@@ -1,6 +1,6 @@
 ---
 
-- name: git clone ipt-netflow
+- name: Git clone ipt-netflow
   ansible.builtin.git:
     repo=https://github.com/aabc/ipt-netflow.git
     dest={{ toolsetdir }}/ipt-netflow
@@ -12,7 +12,7 @@
     cache_valid_time: "{{ iptnetflow_apt_cache_valid_time | default(3600) }}"
   when: ansible_os_family == 'Debian'
 
-- name: ipt-netflow dependencies
+- name: Ipt-netflow dependencies
   ansible.builtin.package:
     name: "{{ iptnetflow_pkg }}"
     state: present
@@ -36,13 +36,13 @@
     # - name: prepare kernel
     #   command: "make prepare modules_prepare chdir={{ workdir }}/{{ srcdir }}"
     ## with module-assistant
-    - name: check if module-assistant has run
+    - name: Check if module-assistant has run
       ansible.builtin.stat: path=/root/.m-a-prepare
       register: madone
-    - name: module-assistant prepare
+    - name: Module-assistant prepare
       ansible.builtin.command: "m-a prepare -t create=/usr/src/linux/.config"
       when: not madone.stat.exists
-    - name: add marker status
+    - name: Add marker status
       ansible.builtin.file:
         dest: /root/.m-a-prepare
         mode: '0600'
@@ -50,14 +50,14 @@
       when: not madone.stat.exists
   when: ansible_os_family == 'Debian'
 
-- name: ipt-netflow compile
+- name: Compile ipt-netflow
   ansible.builtin.command: "{{ item.s }} chdir={{ toolsetdir }}/ipt-netflow creates={{ item.c }}"
   with_items:
     # - { s: "./configure --kdir={{ workdir }}/{{ srcdir }}", c: "{{ toolsetdir }}/ipt-netflow/build" }
     - { s: "./configure {{ iptnetflow_configure_args }}", c: "{{ toolsetdir }}/ipt-netflow/Makefile" }
     - { s: 'make all install', c: '/lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko' }
 
-- name: configure ipt-netflow
+- name: Configure ipt-netflow
   ansible.builtin.lineinfile:
     dest: /etc/modprobe.d/ipt_netflow.conf
     regexp: 'options ipt_NETFLOW .*'
@@ -67,18 +67,18 @@
     backup: yes
     create: yes
 
-- name: check if modules loaded
+- name: Check if modules loaded
   ansible.builtin.command: lsmod
   changed_when: false
   register: lsmod
-- name: kernel module
+- name: Kernel module
   block:
     - name: Debug | lsmod output
       ansible.builtin.debug: var=lsmod
     ## depmod only rewrite those files like '/lib/modules/{{ ansible_kernel }}/modules.dep', not creating them
-    - name: run depmod  # noqa no-changed-when
+    - name: Run depmod  # noqa no-changed-when
       ansible.builtin.command: "depmod chdir={{ toolsetdir }}/ipt-netflow"
-    - name: load ipt_NETFLOW.ko  # noqa no-changed-when
+    - name: Load ipt_NETFLOW.ko  # noqa no-changed-when
       # command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
       ansible.builtin.command: "insmod /lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
   when: >
@@ -89,14 +89,14 @@
 # $ sudo insmod /lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko
 # insmod: error inserting '/lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko': -1 Unknown symbol in module
 
-- name: load ipt-netflow at boot
+- name: Load ipt-netflow at boot
   ansible.builtin.lineinfile:
     dest: /etc/sysconfig/iptables-config
     line: 'IPTABLES_MODULES=\"ipt_NETFLOW\"'
     backup: yes
   when: ansible_os_family == 'RedHat'
   notify:
-    - restart iptables
+    - Restart iptables
 
 ## selinux?
 # restorecon -v /lib/xtables/libipt_NETFLOW.so
