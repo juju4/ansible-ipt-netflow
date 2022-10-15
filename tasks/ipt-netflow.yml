@@ -2,9 +2,9 @@
 
 - name: Git clone ipt-netflow
   ansible.builtin.git:
-    repo=https://github.com/aabc/ipt-netflow.git
-    dest={{ toolsetdir }}/ipt-netflow
-    version={{ iptnetflow_version }}
+    repo: "https://github.com/aabc/ipt-netflow.git"
+    dest: "{{ toolsetdir }}/ipt-netflow"
+    version: "{{ iptnetflow_version }}"
 
 - name: Debian | update cache
   ansible.builtin.apt:
@@ -25,6 +25,7 @@
 #     workdir: "/root/"
 
 - name: Debian
+  when: ansible_os_family == 'Debian'
   block:
     ## no module-assistant: fails...
     # - name: uncompress kernel
@@ -37,10 +38,13 @@
     #   command: "make prepare modules_prepare chdir={{ workdir }}/{{ srcdir }}"
     ## with module-assistant
     - name: Check if module-assistant has run
-      ansible.builtin.stat: path=/root/.m-a-prepare
+      ansible.builtin.stat:
+        path: /root/.m-a-prepare
       register: madone
     - name: Module-assistant prepare
-      ansible.builtin.command: "m-a prepare -t create=/usr/src/linux/.config"
+      ansible.builtin.command: "m-a prepare -t"
+      args:
+        creates: "/usr/src/linux/.config"
       when: not madone.stat.exists
     - name: Add marker status
       ansible.builtin.file:
@@ -48,10 +52,12 @@
         mode: '0600'
         state: touch
       when: not madone.stat.exists
-  when: ansible_os_family == 'Debian'
 
 - name: Compile ipt-netflow
-  ansible.builtin.command: "{{ item.s }} chdir={{ toolsetdir }}/ipt-netflow creates={{ item.c }}"
+  ansible.builtin.command: "{{ item.s }}"
+  args:
+    chdir: "{{ toolsetdir }}/ipt-netflow"
+    creates: "{{ item.c }}"
   with_items:
     # - { s: "./configure --kdir={{ workdir }}/{{ srcdir }}", c: "{{ toolsetdir }}/ipt-netflow/build" }
     - { s: "./configure {{ iptnetflow_configure_args }}", c: "{{ toolsetdir }}/ipt-netflow/Makefile" }
@@ -72,19 +78,22 @@
   changed_when: false
   register: lsmod
 - name: Kernel module
-  block:
-    - name: Debug | lsmod output
-      ansible.builtin.debug: var=lsmod
-    ## depmod only rewrite those files like '/lib/modules/{{ ansible_kernel }}/modules.dep', not creating them
-    - name: Run depmod  # noqa no-changed-when
-      ansible.builtin.command: "depmod chdir={{ toolsetdir }}/ipt-netflow"
-    - name: Load ipt_NETFLOW.ko  # noqa no-changed-when
-      # command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
-      ansible.builtin.command: "insmod /lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
   when: >
     lsmod is defined and lsmod.stdout is defined and lsmod.stdout.find("ipt_NETFLOW.ko") == -1 and
     iptnetflow_load_module is defined and iptnetflow_load_module and
     not (ansible_env['TRAVIS'] is defined and ansible_env['TRAVIS'] == 'true')
+  block:
+    - name: Debug | lsmod output
+      ansible.builtin.debug:
+        var: lsmod
+    ## depmod only rewrite those files like '/lib/modules/{{ ansible_kernel }}/modules.dep', not creating them
+    - name: Run depmod  # noqa no-changed-when
+      ansible.builtin.command: "depmod"
+      args:
+        chdir: "{{ toolsetdir }}/ipt-netflow"
+    - name: Load ipt_NETFLOW.ko  # noqa no-changed-when
+      # command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
+      ansible.builtin.command: "insmod /lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
 ## FIXME! ubuntu 12.04
 # $ sudo insmod /lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko
 # insmod: error inserting '/lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko': -1 Unknown symbol in module
