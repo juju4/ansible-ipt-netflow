@@ -61,7 +61,7 @@
   with_items:
     # - { s: "./configure --kdir={{ workdir }}/{{ srcdir }}", c: "{{ toolsetdir }}/ipt-netflow/build" }
     - { s: "./configure {{ iptnetflow_configure_args }}", c: "{{ toolsetdir }}/ipt-netflow/Makefile" }
-    - { s: 'make all install', c: '/lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko' }
+    - { s: 'make all install', c: '/lib/modules/{{ ansible_kernel }}/updates/ipt_NETFLOW.ko' }
 
 - name: Configure ipt-netflow
   ansible.builtin.lineinfile:
@@ -93,7 +93,7 @@
         chdir: "{{ toolsetdir }}/ipt-netflow"
     - name: Load ipt_NETFLOW.ko  # noqa no-changed-when
       # command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
-      ansible.builtin.command: "insmod /lib/modules/{{ ansible_kernel }}/extra/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
+      ansible.builtin.command: "insmod /lib/modules/{{ ansible_kernel }}/updates/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
 ## FIXME! ubuntu 12.04
 # $ sudo insmod /lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko
 # insmod: error inserting '/lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko': -1 Unknown symbol in module
