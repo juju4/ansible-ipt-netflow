@@ -103,3 +103,9 @@ jobs:
           cat /etc/sysconfig/iptables-config || true
         if: ${{ always() }}
         continue-on-error: true
+      - name: After script - source check
+        run: |
+          set -x
+          grep -C3 strlcpy /opt/tools/ipt-netflow/ipt_NETFLOW.c
+        if: ${{ always() }}
+        continue-on-error: true
