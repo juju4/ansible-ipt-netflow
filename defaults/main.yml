@@ -2,7 +2,7 @@
 
 toolsetdir: /opt/tools
 
-iptnetflow_version: v2.5.1
+iptnetflow_version: 0eb2092e930c78fc726d5d05abbcc81aa6c41b89
 iptnetflow_flow_collector: '127.0.0.1:9995'
 iptnetflow_configure_args: '--enable-vlan --enable-promisc --promisc-mpls'
 
