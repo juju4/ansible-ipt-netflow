@@ -7,7 +7,7 @@
     version: "{{ iptnetflow_version }}"
 
 # https://github.com/aabc/ipt-netflow/issues/227
-- name: Ubuntu 24.04 | s/strlcpy/strscpy/
+- name: Ubuntu 22.04 | s/strlcpy/strscpy/
   ansible.builtin.replace:
     path: "{{ toolsetdir }}/ipt-netflow/ipt_NETFLOW.c"
     regexp: 'strlcpy'
@@ -15,7 +15,16 @@
     mode: '0644'
   when:
     - ansible_distribution == 'Ubuntu'
-    - ansible_distribution_major_version | int >= 24
+    - ansible_distribution_major_version | int >= 22
+
+# https://github.com/aabc/ipt-netflow/issues/235
+- name: Ubuntu 22.04 | patch ctl_table 6.11+
+  ansible.posix.patch:
+    src: ipt-netflow.c.patch
+    dest: "{{ toolsetdir }}/ipt-netflow/ipt_NETFLOW.c"
+  when:
+    - ansible_distribution == 'Ubuntu'
+    - ansible_distribution_major_version | int >= 22
 
 - name: Debian | update cache
   ansible.builtin.apt:

@@ -60,6 +60,10 @@ Use kitchen/vagrant
 
 * need to add support for dkms
 
+* ipt-netflow build is broken at Sep 2025. Extra patches.
+  * ubuntu-22.04: https://github.com/aabc/ipt-netflow/issues/227
+  * ubuntu-24.04: https://github.com/aabc/ipt-netflow/issues/235, https://github.com/aabc/ipt-netflow/issues/237, https://github.com/aabc/ipt-netflow/issues/240
+
 ## License
 
 BSD 2-clause

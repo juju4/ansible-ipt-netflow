@@ -1,0 +1,146 @@
+--- ./ipt_NETFLOW.c     2024-10-24 18:04:34.241377109 -0400
++++ ./ipt_NETFLOW.c     2024-10-24 18:04:03.562056472 -0400
+@@ -1519,7 +1519,7 @@
+ 
+ #ifdef CONFIG_SYSCTL
+ /* sysctl /proc/sys/net/netflow */
+-static int hsize_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int hsize_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret, hsize;
+@@ -1536,7 +1536,7 @@
+                return ret;
+ }
+ 
+-static int sndbuf_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int sndbuf_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1571,7 +1571,7 @@
+ }
+ 
+ static void free_templates(void);
+-static int destination_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int destination_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1588,7 +1588,7 @@
+ }
+ 
+ #ifdef ENABLE_AGGR
+-static int aggregation_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int aggregation_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1603,7 +1603,7 @@
+ #endif
+ 
+ #ifdef ENABLE_PROMISC
+-static int promisc_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int promisc_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int newpromisc = promisc;
+@@ -1620,7 +1620,7 @@
+ 
+ #ifdef ENABLE_SAMPLER
+ static int parse_sampler(char *ptr);
+-static int sampler_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int sampler_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1653,7 +1653,7 @@
+ 
+ #ifdef SNMP_RULES
+ static int add_snmp_rules(char *ptr);
+-static int snmp_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int snmp_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1678,7 +1678,7 @@
+        }
+ }
+ 
+-static int flush_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int flush_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1707,7 +1707,7 @@
+        return ret;
+ }
+ 
+-static int protocol_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int protocol_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1740,7 +1740,7 @@
+ #ifdef CONFIG_NF_NAT_NEEDED
+ static void register_ct_events(void);
+ static void unregister_ct_events(void);
+-static int natevents_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int natevents_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+                         void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -4087,7 +4087,7 @@
+                ops->get_drvinfo(dev, &info);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
+        else if (dev->dev.parent && dev->dev.parent->driver) {
+-               strlcpy(info.driver, dev->dev.parent->driver->name, sizeof(info.driver));
++                strscpy(info.driver, dev->dev.parent->driver->name, sizeof(info.driver));
+        }
+ #endif
+        n = scnprintf(ptr, len, "%s", info.driver);
+@@ -5671,7 +5671,7 @@
+ # ifdef HAVE_REGISTER_SYSCTL_PATHS
+        netflow_sysctl_header = register_sysctl_paths(netflow_sysctl_path, netflow_sysctl_table);
+ # else
+-       netflow_sysctl_header = register_sysctl("net/netflow", netflow_sysctl_table);
++        netflow_sysctl_header = register_sysctl_sz("net/netflow", netflow_sysctl_table, 0);
+ # endif
+ #endif
+        if (!netflow_sysctl_header) {
+@@ -5684,7 +5684,7 @@
+        if (!destination)
+                destination = destination_buf;
+        if (destination != destination_buf) {
+-               strlcpy(destination_buf, destination, sizeof(destination_buf));
++                strscpy(destination_buf, destination, sizeof(destination_buf));
+                destination = destination_buf;
+        }
+        if (add_destinations(destination) < 0)
+@@ -5694,7 +5694,7 @@
+        if (!aggregation)
+                aggregation = aggregation_buf;
+        if (aggregation != aggregation_buf) {
+-               strlcpy(aggregation_buf, aggregation, sizeof(aggregation_buf));
++                strscpy(aggregation_buf, aggregation, sizeof(aggregation_buf));
+                aggregation = aggregation_buf;
+        }
+        add_aggregation(aggregation);
+@@ -5704,7 +5704,7 @@
+        if (!sampler)
+                sampler = sampler_buf;
+        if (sampler != sampler_buf) {
+-               strlcpy(sampler_buf, sampler, sizeof(sampler_buf));
++                strscpy(sampler_buf, sampler, sizeof(sampler_buf));
+                sampler = sampler_buf;
+        }
+        parse_sampler(sampler);
+@@ -5721,7 +5721,7 @@
+        if (!snmp_rules)
+                snmp_rules = snmp_rules_buf;
+        if (snmp_rules != snmp_rules_buf) {
+-               strlcpy(snmp_rules_buf, snmp_rules, sizeof(snmp_rules_buf));
++                strscpy(snmp_rules_buf, snmp_rules, sizeof(snmp_rules_buf));
+                snmp_rules = snmp_rules_buf;
+        }
+        add_snmp_rules(snmp_rules);
