@@ -3,8 +3,8 @@
 iptnetflow_pkg:
   - module-assistant
   # - linux-source
-  - "linux-image-{{ ansible_kernel }}"
-  - "linux-headers-{{ ansible_kernel }}"
+  - "linux-image-{{ ansible_facts['kernel'] }}"
+  - "linux-headers-{{ ansible_facts['kernel'] }}"
   - iptables-dev
   - pkg-config
   - snmpd
