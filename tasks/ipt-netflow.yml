@@ -19,8 +19,8 @@
     src: ipt-netflow.c.patch
     dest: "{{ toolsetdir }}/ipt-netflow/ipt_NETFLOW.c"
   when:
-    - ansible_distribution == 'Ubuntu'
-    - ansible_distribution_major_version | int >= 24
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - ansible_facts['distribution_major_version'] | int >= 24
 
 - name: Ubuntu 22.04 | s/strlcpy/strscpy/
   ansible.builtin.replace:
@@ -29,14 +29,14 @@
     replace: 'strscpy'
     mode: '0644'
   when:
-    - ansible_distribution == 'Ubuntu'
-    - ansible_distribution_major_version | int == 22
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - ansible_facts['distribution_major_version'] | int == 22
 
 - name: Debian | update cache
   ansible.builtin.apt:
     update_cache: yes
     cache_valid_time: "{{ iptnetflow_apt_cache_valid_time | default(3600) }}"
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts['os_family'] == 'Debian'
 
 - name: Ipt-netflow dependencies
   ansible.builtin.package:
@@ -47,17 +47,17 @@
 
 # - name: set linux src vars
 #   ansible.builtin.set_fact:
-#     srcdir: "linux-source-{{ ansible_kernel | regex_replace('-[0-9]*-generic$', '') }}"
+#     srcdir: "linux-source-{{ ansible_facts['kernel'] | regex_replace('-[0-9]*-generic$', '') }}"
 #     workdir: "/root/"
 
 - name: Debian
-  when: ansible_os_family == 'Debian'
+  when: ansible_facts['os_family'] == 'Debian'
   block:
     ## no module-assistant: fails...
     # - name: uncompress kernel
     #   unarchive: "src=/usr/src/{{ srcdir }}.tar.bz2 dest={{ workdir }} creates={{ workdir }}/{{ srcdir }}/Makefile"
     # - name: copy current config
-    #   copy: src=/boot/config-{{ ansible_kernel }} dest={{ workdir }}/{{ srcdir }}/.config remote_src=yes
+    #   copy: src=/boot/config-{{ ansible_facts['kernel'] }} dest={{ workdir }}/{{ srcdir }}/.config remote_src=yes
     # - name: make oldconfig
     #   command: "make oldconfig chdir={{ workdir }}/{{ srcdir }}"
     # - name: prepare kernel
@@ -87,7 +87,7 @@
   with_items:
     # - { s: "./configure --kdir={{ workdir }}/{{ srcdir }}", c: "{{ toolsetdir }}/ipt-netflow/build" }
     - { s: "./configure {{ iptnetflow_configure_args }}", c: "{{ toolsetdir }}/ipt-netflow/Makefile" }
-    - { s: 'make all install', c: '/lib/modules/{{ ansible_kernel }}/updates/ipt_NETFLOW.ko' }
+    - { s: 'make all install', c: '/lib/modules/{{ ansible_facts['kernel'] }}/updates/ipt_NETFLOW.ko' }
 
 - name: Configure ipt-netflow
   ansible.builtin.lineinfile:
@@ -112,14 +112,14 @@
     - name: Debug | lsmod output
       ansible.builtin.debug:
         var: lsmod
-    ## depmod only rewrite those files like '/lib/modules/{{ ansible_kernel }}/modules.dep', not creating them
+    ## depmod only rewrite those files like '/lib/modules/{{ ansible_facts['kernel'] }}/modules.dep', not creating them
     - name: Run depmod  # noqa no-changed-when
       ansible.builtin.command: "depmod"
       args:
         chdir: "{{ toolsetdir }}/ipt-netflow"
     - name: Load ipt_NETFLOW.ko  # noqa no-changed-when
       # command: "modprobe ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
-      ansible.builtin.command: "insmod /lib/modules/{{ ansible_kernel }}/updates/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
+      ansible.builtin.command: "insmod /lib/modules/{{ ansible_facts['kernel'] }}/updates/ipt_NETFLOW.ko {{ iptnetflow_flow_collector }}"
 ## FIXME! ubuntu 12.04
 # $ sudo insmod /lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko
 # insmod: error inserting '/lib/modules/3.2.0-106-generic/extra/ipt_NETFLOW.ko': -1 Unknown symbol in module
@@ -129,7 +129,7 @@
     dest: /etc/sysconfig/iptables-config
     line: 'IPTABLES_MODULES=\"ipt_NETFLOW\"'
     backup: yes
-  when: ansible_os_family == 'RedHat'
+  when: ansible_facts['os_family'] == 'RedHat'
   notify:
     - Restart iptables
 
