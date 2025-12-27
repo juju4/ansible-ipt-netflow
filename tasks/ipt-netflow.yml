@@ -87,7 +87,7 @@
   with_items:
     # - { s: "./configure --kdir={{ workdir }}/{{ srcdir }}", c: "{{ toolsetdir }}/ipt-netflow/build" }
     - { s: "./configure {{ iptnetflow_configure_args }}", c: "{{ toolsetdir }}/ipt-netflow/Makefile" }
-    - { s: 'make all install', c: '/lib/modules/{{ ansible_facts['kernel'] }}/updates/ipt_NETFLOW.ko' }
+    - { s: 'make all install', c: "/lib/modules/{{ ansible_facts['kernel'] }}/updates/ipt_NETFLOW.ko" }
 
 - name: Configure ipt-netflow
   ansible.builtin.lineinfile:
