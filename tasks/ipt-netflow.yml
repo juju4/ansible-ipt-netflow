@@ -104,10 +104,13 @@
   changed_when: false
   register: lsmod
 - name: Kernel module
-  when: >
-    lsmod is defined and lsmod.stdout is defined and lsmod.stdout.find("ipt_NETFLOW.ko") == -1 and
-    iptnetflow_load_module is defined and iptnetflow_load_module and
-    not (ansible_env['TRAVIS'] is defined and ansible_env['TRAVIS'] == 'true')
+  when:
+    - lsmod is defined
+    - lsmod.stdout is defined
+    - lsmod.stdout.find("ipt_NETFLOW.ko") == -1
+    - iptnetflow_load_module is defined
+    - iptnetflow_load_module | bool
+    - not (ansible_facts['env']['TRAVIS'] is defined and ansible_facts['env']['TRAVIS'] == 'true')
   block:
     - name: Debug | lsmod output
       ansible.builtin.debug:
