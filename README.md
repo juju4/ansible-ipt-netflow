@@ -1,11 +1,13 @@
 # IPT Netflow kernel module ansible role
 
 Ansible role to setup IPT Netflow
-https://github.com/aabc/ipt-netflow
+* https://github.com/aabc/ipt-netflow
 
 High performance NetFlow v5, v9, IPFIX flow data export module for Linux
    kernel. Created to be useful for highly loaded linux router. It should be
    used as iptables target.
+
+Warning! Last release v2.5.1 is from Aug 2020 and last commit from Apr 2025 which makes maintanability questionable. Plan accordingly.
 
 ## Requirements & Dependencies
 
