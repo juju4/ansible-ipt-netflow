@@ -1,0 +1,448 @@
+From 5fdff54fa4f611a5b61dcb5b1669ca562d4bd5a3 Mon Sep 17 00:00:00 2001
+From: Alexey Kostin <rumanzo@yandex.ru>
+Date: Fri, 21 Nov 2025 22:46:15 +0300
+Subject: [PATCH 1/3] Adapt kernel for 6.12 version due api changes
+
+---
+ compat.h       |  3 +++
+ gen_compat_def |  2 +-
+ ipt_NETFLOW.c  | 46 ++++++++++++++++++++++++++++++++++++----------
+ 3 files changed, 40 insertions(+), 11 deletions(-)
+
+diff --git a/compat.h b/compat.h
+index 982bb09..13ce963 100644
+--- a/compat.h
++++ b/compat.h
+@@ -216,6 +216,7 @@ struct timeval {
+ 	long tv_usec; /* microseconds */
+ };
+ 
++unsigned long timeval_to_jiffies(const struct timeval *tv);
+ unsigned long timeval_to_jiffies(const struct timeval *tv)
+ {
+ 	return timespec64_to_jiffies(&(struct timespec64){
+@@ -383,6 +384,7 @@ static int sockaddr_cmp(const struct sockaddr_storage *sa1, const struct sockadd
+ #ifndef IN6PTON_XDIGIT
+ #define hex_to_bin compat_hex_to_bin
+ /* lib/hexdump.c */
++int hex_to_bin(char ch);
+ int hex_to_bin(char ch)
+ {
+ 	if ((ch >= '0') && (ch <= '9'))
+@@ -713,6 +715,7 @@ static inline void do_gettimeofday(struct timeval *tv)
+ #endif
+ 
+ #define TOLOWER(x) ((x) | 0x20)
++unsigned long long strtoul(const char *cp, char **endp, unsigned int base);
+ unsigned long long strtoul(const char *cp, char **endp, unsigned int base)
+ {
+ 	unsigned long long result = 0;
+diff --git a/gen_compat_def b/gen_compat_def
+index 30d5bc7..fbace78 100755
+--- a/gen_compat_def
++++ b/gen_compat_def
+@@ -36,7 +36,6 @@ kbuild_test_compile() {
+     echo
+   else
+     echo " undeclared" >&2
+-    echo "#undef HAVE_$1"
+     echo "// ${2:-symbol} is undeclared${3:+ in <$3>}. Compile:"
+     sed  "s/^/\/\/   /" test.c
+     echo "// Output:"
+@@ -122,6 +121,7 @@ kbuild_test_symbol nf_bridge_info_get linux/netfilter_bridge.h
+ kbuild_test_struct vlan_dev_priv linux/if_vlan.h
+ # Kernel version check broken by centos8
+ kbuild_test_symbol put_unaligned_be24 asm/unaligned.h
++kbuild_test_symbol put_unaligned_be24 linux/unaligned.h
+ # totalram_pages changed from atomic to inline function.
+ kbuild_test_symbol totalram_pages linux/mm.h
+ kbuild_test_ref    totalram_pages linux/mm.h
+diff --git a/ipt_NETFLOW.c b/ipt_NETFLOW.c
+index 3c9cc05..6b16b4a 100644
+--- a/ipt_NETFLOW.c
++++ b/ipt_NETFLOW.c
+@@ -68,7 +68,11 @@
+ # include <net/netfilter/nf_conntrack_core.h>
+ #endif
+ #include <linux/version.h>
++#if LINUX_VERSION_CODE >= KERNEL_VERSION(6,12,0)
++#include <linux/unaligned.h>
++#else
+ #include <asm/unaligned.h>
++#endif
+ #ifdef HAVE_LLIST
+ 	/* llist.h is officially defined since linux 3.1,
+ 	 * but centos6 have it backported on its 2.6.32.el6 */
+@@ -1519,7 +1523,7 @@ static int switch_promisc(int newpromisc)
+ 
+ #ifdef CONFIG_SYSCTL
+ /* sysctl /proc/sys/net/netflow */
+-static int hsize_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int hsize_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret, hsize;
+@@ -1536,7 +1540,7 @@ static int hsize_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp
+ 		return ret;
+ }
+ 
+-static int sndbuf_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int sndbuf_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1571,7 +1575,7 @@ static int sndbuf_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *fil
+ }
+ 
+ static void free_templates(void);
+-static int destination_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int destination_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1588,7 +1592,7 @@ static int destination_procctl(ctl_table *ctl, int write, BEFORE2632(struct file
+ }
+ 
+ #ifdef ENABLE_AGGR
+-static int aggregation_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int aggregation_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1603,7 +1607,7 @@ static int aggregation_procctl(ctl_table *ctl, int write, BEFORE2632(struct file
+ #endif
+ 
+ #ifdef ENABLE_PROMISC
+-static int promisc_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int promisc_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int newpromisc = promisc;
+@@ -1620,7 +1624,7 @@ static int promisc_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *fi
+ 
+ #ifdef ENABLE_SAMPLER
+ static int parse_sampler(char *ptr);
+-static int sampler_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int sampler_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1653,7 +1657,7 @@ static int sampler_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *fi
+ 
+ #ifdef SNMP_RULES
+ static int add_snmp_rules(char *ptr);
+-static int snmp_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int snmp_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+        int ret;
+@@ -1678,7 +1682,7 @@ static void clear_ipt_netflow_stat(void)
+ 	}
+ }
+ 
+-static int flush_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int flush_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1707,7 +1711,7 @@ static int flush_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp
+ 	return ret;
+ }
+ 
+-static int protocol_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int protocol_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1740,7 +1744,7 @@ static int protocol_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *f
+ #ifdef CONFIG_NF_NAT_NEEDED
+ static void register_ct_events(void);
+ static void unregister_ct_events(void);
+-static int natevents_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++static int natevents_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
+ {
+ 	int ret;
+@@ -1905,7 +1909,9 @@ static ctl_table netflow_sysctl_table[] = {
+ 		.proc_handler	= &natevents_procctl,
+ 	},
+ #endif
++# ifdef HAVE_REGISTER_SYSCTL_PATHS
+ 	{ }
++#endif
+ };
+ 
+ #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,25)
+@@ -4087,7 +4093,11 @@ static int ethtool_drvinfo(unsigned char *ptr, size_t size, struct net_device *d
+ 		ops->get_drvinfo(dev, &info);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
+ 	else if (dev->dev.parent && dev->dev.parent->driver) {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
+ 		strlcpy(info.driver, dev->dev.parent->driver->name, sizeof(info.driver));
++#else
++		strscpy(info.driver, dev->dev.parent->driver->name, sizeof(info.driver));
++#endif
+ 	}
+ #endif
+ 	n = scnprintf(ptr, len, "%s", info.driver);
+@@ -5688,7 +5698,11 @@ static int __init ipt_netflow_init(void)
+ 	if (!destination)
+ 		destination = destination_buf;
+ 	if (destination != destination_buf) {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
+ 		strlcpy(destination_buf, destination, sizeof(destination_buf));
++#else
++		strscpy(destination_buf, destination, sizeof(destination_buf));
++#endif
+ 		destination = destination_buf;
+ 	}
+ 	if (add_destinations(destination) < 0)
+@@ -5698,7 +5712,11 @@ static int __init ipt_netflow_init(void)
+ 	if (!aggregation)
+ 		aggregation = aggregation_buf;
+ 	if (aggregation != aggregation_buf) {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
+ 		strlcpy(aggregation_buf, aggregation, sizeof(aggregation_buf));
++#else
++		strscpy(aggregation_buf, aggregation, sizeof(aggregation_buf));
++#endif
+ 		aggregation = aggregation_buf;
+ 	}
+ 	add_aggregation(aggregation);
+@@ -5708,7 +5726,11 @@ static int __init ipt_netflow_init(void)
+ 	if (!sampler)
+ 		sampler = sampler_buf;
+ 	if (sampler != sampler_buf) {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
+ 		strlcpy(sampler_buf, sampler, sizeof(sampler_buf));
++#else
++		strscpy(sampler_buf, sampler, sizeof(sampler_buf));
++#endif
+ 		sampler = sampler_buf;
+ 	}
+ 	parse_sampler(sampler);
+@@ -5725,7 +5747,11 @@ static int __init ipt_netflow_init(void)
+ 	if (!snmp_rules)
+ 		snmp_rules = snmp_rules_buf;
+ 	if (snmp_rules != snmp_rules_buf) {
++#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
+ 		strlcpy(snmp_rules_buf, snmp_rules, sizeof(snmp_rules_buf));
++#else
++		strscpy(snmp_rules_buf, snmp_rules, sizeof(snmp_rules_buf));
++#endif
+ 		snmp_rules = snmp_rules_buf;
+ 	}
+ 	add_snmp_rules(snmp_rules);
+
+From c0273ef6957452892e176946f30894b66e9ba1f7 Mon Sep 17 00:00:00 2001
+From: Alexey Kostin <rumanzo@yandex.ru>
+Date: Fri, 21 Nov 2025 23:28:45 +0300
+Subject: [PATCH 2/3] make patch tolerant for old kernel versions
+
+---
+ ipt_NETFLOW.c | 50 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 50 insertions(+)
+
+diff --git a/ipt_NETFLOW.c b/ipt_NETFLOW.c
+index 6b16b4a..f156413 100644
+--- a/ipt_NETFLOW.c
++++ b/ipt_NETFLOW.c
+@@ -1523,8 +1523,13 @@ static int switch_promisc(int newpromisc)
+ 
+ #ifdef CONFIG_SYSCTL
+ /* sysctl /proc/sys/net/netflow */
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int hsize_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int hsize_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret, hsize;
+ 	ctl_table_no_const lctl = *ctl;
+@@ -1540,8 +1545,13 @@ static int hsize_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file
+ 		return ret;
+ }
+ 
++# ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int sndbuf_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int sndbuf_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 	struct ipt_netflow_sock *usock;
+@@ -1575,8 +1585,13 @@ static int sndbuf_procctl(const ctl_table *ctl, int write, BEFORE2632(struct fil
+ }
+ 
+ static void free_templates(void);
++# ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int destination_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int destination_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 
+@@ -1592,8 +1607,13 @@ static int destination_procctl(const ctl_table *ctl, int write, BEFORE2632(struc
+ }
+ 
+ #ifdef ENABLE_AGGR
++# ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int aggregation_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int aggregation_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 
+@@ -1607,8 +1627,13 @@ static int aggregation_procctl(const ctl_table *ctl, int write, BEFORE2632(struc
+ #endif
+ 
+ #ifdef ENABLE_PROMISC
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int promisc_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int promisc_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int newpromisc = promisc;
+ 	int ret;
+@@ -1624,8 +1649,13 @@ static int promisc_procctl(const ctl_table *ctl, int write, BEFORE2632(struct fi
+ 
+ #ifdef ENABLE_SAMPLER
+ static int parse_sampler(char *ptr);
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int sampler_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int sampler_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 
+@@ -1657,8 +1687,13 @@ static int sampler_procctl(const ctl_table *ctl, int write, BEFORE2632(struct fi
+ 
+ #ifdef SNMP_RULES
+ static int add_snmp_rules(char *ptr);
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int snmp_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int snmp_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+        int ret;
+ 
+@@ -1682,8 +1717,13 @@ static void clear_ipt_netflow_stat(void)
+ 	}
+ }
+ 
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int flush_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int flush_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 	int val = 0;
+@@ -1711,8 +1751,13 @@ static int flush_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file
+ 	return ret;
+ }
+ 
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int protocol_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int protocol_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 	int ver = protocol;
+@@ -1744,8 +1789,13 @@ static int protocol_procctl(const ctl_table *ctl, int write, BEFORE2632(struct f
+ #ifdef CONFIG_NF_NAT_NEEDED
+ static void register_ct_events(void);
+ static void unregister_ct_events(void);
++#ifdef HAVE_REGISTER_SYSCTL_PATHS
++static int natevents_procctl(ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
++			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#else
+ static int natevents_procctl(const ctl_table *ctl, int write, BEFORE2632(struct file *filp,)
+ 			 void __user *buffer, size_t *lenp, loff_t *fpos)
++#endif
+ {
+ 	int ret;
+ 	int val = natevents;
+
+From b3a2a9331670a96e0904eaf60c2bb3d59a2e2c3c Mon Sep 17 00:00:00 2001
+From: Alexey Kostin <rumanzo@yandex.ru>
+Date: Sat, 22 Nov 2025 00:14:13 +0300
+Subject: [PATCH 3/3] fix kernel compare for strscpy
+
+---
+ ipt_NETFLOW.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/ipt_NETFLOW.c b/ipt_NETFLOW.c
+index f156413..273c35c 100644
+--- a/ipt_NETFLOW.c
++++ b/ipt_NETFLOW.c
+@@ -4143,7 +4143,7 @@ static int ethtool_drvinfo(unsigned char *ptr, size_t size, struct net_device *d
+ 		ops->get_drvinfo(dev, &info);
+ #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,37)
+ 	else if (dev->dev.parent && dev->dev.parent->driver) {
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,8,0)
+ 		strlcpy(info.driver, dev->dev.parent->driver->name, sizeof(info.driver));
+ #else
+ 		strscpy(info.driver, dev->dev.parent->driver->name, sizeof(info.driver));
+@@ -5748,7 +5748,7 @@ static int __init ipt_netflow_init(void)
+ 	if (!destination)
+ 		destination = destination_buf;
+ 	if (destination != destination_buf) {
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,8,0)
+ 		strlcpy(destination_buf, destination, sizeof(destination_buf));
+ #else
+ 		strscpy(destination_buf, destination, sizeof(destination_buf));
+@@ -5762,7 +5762,7 @@ static int __init ipt_netflow_init(void)
+ 	if (!aggregation)
+ 		aggregation = aggregation_buf;
+ 	if (aggregation != aggregation_buf) {
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,8,0)
+ 		strlcpy(aggregation_buf, aggregation, sizeof(aggregation_buf));
+ #else
+ 		strscpy(aggregation_buf, aggregation, sizeof(aggregation_buf));
+@@ -5776,7 +5776,7 @@ static int __init ipt_netflow_init(void)
+ 	if (!sampler)
+ 		sampler = sampler_buf;
+ 	if (sampler != sampler_buf) {
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,8,0)
+ 		strlcpy(sampler_buf, sampler, sizeof(sampler_buf));
+ #else
+ 		strscpy(sampler_buf, sampler, sizeof(sampler_buf));
+@@ -5797,7 +5797,7 @@ static int __init ipt_netflow_init(void)
+ 	if (!snmp_rules)
+ 		snmp_rules = snmp_rules_buf;
+ 	if (snmp_rules != snmp_rules_buf) {
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(6,8,0)
++#if LINUX_VERSION_CODE < KERNEL_VERSION(6,8,0)
+ 		strlcpy(snmp_rules_buf, snmp_rules, sizeof(snmp_rules_buf));
+ #else
+ 		strscpy(snmp_rules_buf, snmp_rules, sizeof(snmp_rules_buf));

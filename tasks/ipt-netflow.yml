@@ -14,10 +14,12 @@
 
 # https://github.com/aabc/ipt-netflow/issues/227
 # https://github.com/aabc/ipt-netflow/issues/235
+# https://github.com/aabc/ipt-netflow/pull/251
 - name: Ubuntu 24.04 | patch strscpy and ctl_table 6.11+
   ansible.posix.patch:
-    src: ipt-netflow.c.patch
-    dest: "{{ toolsetdir }}/ipt-netflow/ipt_NETFLOW.c"
+    src: 251.patch
+    dest: "{{ toolsetdir }}/ipt-netflow"
+    strip: 1
   when:
     - ansible_facts['distribution'] == 'Ubuntu'
     - ansible_facts['distribution_major_version'] | int >= 24
@@ -88,6 +90,17 @@
     # - { s: "./configure --kdir={{ workdir }}/{{ srcdir }}", c: "{{ toolsetdir }}/ipt-netflow/build" }
     - { s: "./configure {{ iptnetflow_configure_args }}", c: "{{ toolsetdir }}/ipt-netflow/Makefile" }
     - { s: 'make all install', c: "/lib/modules/{{ ansible_facts['kernel'] }}/updates/ipt_NETFLOW.ko" }
+
+- name: Ubuntu 24.04 | copy libipt_NETFLOW.so
+  ansible.builtin.copy:
+    src: "{{ toolsetdir }}/ipt-netflow/libipt_NETFLOW.so"
+    dest: /usr/lib/x86_64-linux-gnu/xtables
+    mode: '0644'
+    owner: root
+    remote_src: true
+  when:
+    - ansible_facts['distribution'] == 'Ubuntu'
+    - ansible_facts['distribution_major_version'] | int >= 24
 
 - name: Configure ipt-netflow
   ansible.builtin.lineinfile:
