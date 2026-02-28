@@ -19,7 +19,7 @@
   ansible.posix.patch:
     src: 251.patch
     dest: "{{ toolsetdir }}/ipt-netflow"
-    strip: 0
+    strip: 1
   when:
     - ansible_facts['distribution'] == 'Ubuntu'
     - ansible_facts['distribution_major_version'] | int >= 24
