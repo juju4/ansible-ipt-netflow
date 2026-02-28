@@ -18,7 +18,7 @@
 - name: Ubuntu 24.04 | patch strscpy and ctl_table 6.11+
   ansible.posix.patch:
     src: 251.patch
-    dest: "{{ toolsetdir }}/ipt-netflow"
+    basedir: "{{ toolsetdir }}/ipt-netflow"
     strip: 1
   when:
     - ansible_facts['distribution'] == 'Ubuntu'
