@@ -25,6 +25,7 @@
         src: 251.patch
         basedir: "{{ toolsetdir }}/ipt-netflow"
         strip: 1
+      when: false
     # https://github.com/aabc/ipt-netflow/pull/248
     - name: Ubuntu 24.04 | patch kernel 6.16+
       ansible.posix.patch:
