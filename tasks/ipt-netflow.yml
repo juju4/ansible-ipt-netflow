@@ -12,17 +12,25 @@
     version: "{{ iptnetflow_version }}"
     update: false
 
-# https://github.com/aabc/ipt-netflow/issues/227
-# https://github.com/aabc/ipt-netflow/issues/235
-# https://github.com/aabc/ipt-netflow/pull/251
-- name: Ubuntu 24.04 | patch strscpy and ctl_table 6.11+
-  ansible.posix.patch:
-    src: 251.patch
-    basedir: "{{ toolsetdir }}/ipt-netflow"
-    strip: 1
+- name: Ubuntu 24.04
   when:
     - ansible_facts['distribution'] == 'Ubuntu'
     - ansible_facts['distribution_major_version'] | int >= 24
+  block:
+    # https://github.com/aabc/ipt-netflow/issues/227
+    # https://github.com/aabc/ipt-netflow/issues/235
+    # https://github.com/aabc/ipt-netflow/pull/251
+    - name: Ubuntu 24.04 | patch strscpy and ctl_table 6.11+
+      ansible.posix.patch:
+        src: 251.patch
+        basedir: "{{ toolsetdir }}/ipt-netflow"
+        strip: 1
+    # https://github.com/aabc/ipt-netflow/pull/248
+    - name: Ubuntu 24.04 | patch kernel 6.16+
+      ansible.posix.patch:
+        src: 248.patch
+        basedir: "{{ toolsetdir }}/ipt-netflow"
+        strip: 1
 
 - name: Ubuntu 22.04 | s/strlcpy/strscpy/
   ansible.builtin.replace:
@@ -99,8 +107,8 @@
     owner: root
     remote_src: true
   when:
-    - ansible_facts['distribution'] == 'Ubuntu'
-    - ansible_facts['distribution_major_version'] | int >= 24
+    - (ansible_facts['distribution'] == 'Ubuntu' and ansible_facts['distribution_major_version'] | int >= 24) or
+      (ansible_facts['distribution'] == 'Debian' and ansible_facts['distribution_major_version'] | int >= 13)
 
 - name: Configure ipt-netflow
   ansible.builtin.lineinfile:
