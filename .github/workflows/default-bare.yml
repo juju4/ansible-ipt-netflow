@@ -52,6 +52,7 @@ jobs:
           pwd
           env
           find -ls
+          free -m
       - name: lsattr
         run: |
           set -x
@@ -107,5 +108,23 @@ jobs:
         run: |
           set -x
           grep -C3 strlcpy /opt/tools/ipt-netflow/ipt_NETFLOW.c
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - kern.log
+        run: |
+          set -x
+          sudo tail -n100 /var/log/kern.log
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - dmesg
+        run: |
+          set -x
+          sudo dmesg | tail -n100
+        if: ${{ always() }}
+        continue-on-error: true
+      - name: After script - Memory
+        run: |
+          set -x
+          free -m
         if: ${{ always() }}
         continue-on-error: true
